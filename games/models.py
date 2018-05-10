@@ -6,12 +6,19 @@ from django.db import models
 #     position = models.CharField(primary_key =True,max_length=2 )
 #     description = models.CharField(max_length=30, null=False, blank=False)
 
+class League(models.Model):
+    title = models.CharField(max_length=30,null=False, blank=False)
+    is_active = models.BooleanField(default=True)
+
 #打擊結果選項
 class BatResult(models.Model):
     catcode = models.CharField(primary_key =True,max_length=2 )
     description = models.CharField(max_length=30, null=False, blank=False)
     batseats = models.IntegerField(default = 1)#打席數
     batcount = models.IntegerField(default = 1)#打數
+
+    def __str__(self):
+        return '%s - %s' %(self.catcode, self.description)
 
 
 #球員
@@ -42,14 +49,14 @@ class TeamMember(models.Model):
 #系列盃賽
 class Cup(models.Model):
     cup_title = models.CharField(max_length=30, null=False, blank=False)
-    is_finished = models.BooleanField(default=False, verbose_name="")# True代表盃賽結束
+    is_finished = models.BooleanField(default=False, verbose_name="季賽結束")# True代表盃賽結束
 
     def __str__(self):
         return self.cup_title
 
 #盃賽分組
 class CupGroup(models.Model):
-    cup = models.ForeignKey( Cup, on_delete=models.CASCADE )
+    cup = models.ForeignKey( Cup, on_delete=models.CASCADE,limit_choices_to = { 'is_finished': False  } )
     team = models.ForeignKey( Team, on_delete=models.CASCADE )
     GROUP = (
         ('A', 'A'),
@@ -77,10 +84,13 @@ class CupGroup(models.Model):
 #盃賽分組賽程時間
 class Schedule(models.Model):
     dif_date = models.DateField()  #預定日期
-    cup = models.ForeignKey( Cup, on_delete=models.CASCADE )    #盃賽
+    cup = models.ForeignKey( Cup, on_delete=models.CASCADE ,limit_choices_to = { 'is_finished': False  })    #盃賽
     playdate = models.DateField()#比賽日期
     guest = models.OneToOneField( Team, on_delete=models.CASCADE )    #客隊
     home =  models.OneToOneField( Team, on_delete=models.CASCADE,related_name="home" )    #主隊
+    guest_score = models.IntegerField( default=0, null=False, blank=False ) #客隊分數
+    home_score = models.IntegerField( default=0, null=False, blank=False )  #主隊分數
+    is_finished = models.BooleanField(default=False, verbose_name="")# True代表已經打完
 
     def __str__(self):
         return '%s : %s' %(self.guest , self.home)
@@ -92,12 +102,11 @@ class Schedule(models.Model):
 #比賽
 class Game(models.Model):
     schedule = models.ForeignKey( Schedule, on_delete=models.CASCADE )    #盃賽
-    guest_score = models.IntegerField( default=0, null=False, blank=False ) #客隊分數
-    home_score = models.IntegerField( default=0, null=False, blank=False )  #主隊分數
-    is_finished = models.BooleanField(default=False, verbose_name="")# True代表已經打完
+    is_finished = models.BooleanField(default=True, verbose_name="")# True代表已經打完
 
 #   攻守名單
-class Batters(models.Model):
+class BatterOrder(models.Model):
+    schedule = models.ForeignKey( Schedule, on_delete=models.CASCADE )    #盃賽
     POSITION = (
         ('1', 'P'),
         ('2', 'C'),
@@ -110,21 +119,21 @@ class Batters(models.Model):
         ('9', 'RF'),
         ('DH','DH'),
     )
-    game = models.ForeignKey( Game, on_delete=models.CASCADE )#比賽場次
+
+    # game = models.ForeignKey( Game, on_delete=models.CASCADE )#比賽場次
     team = models.ForeignKey( Team, on_delete=models.CASCADE )#球隊
     player = models.ForeignKey( Member, on_delete=models.CASCADE )#球員
     position = models.CharField(
         max_length=2,
-        choices=POSITION,
-        # default = 'A'#守備位置
+        choices=POSITION
         )
-    batseat1 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席1
-    # batseat2 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席2
-    # batseat3 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席3
-    # batseat4 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席4
-    # batseat5 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席5
-    # batseat6 = models.ForeignKey( BatResult, on_delete=models.CASCADE, null=False, blank=False )#打席6
-
-
-#   打擊結果
-#class Plays(models.Model):
+    batseat1 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat1")#打席1
+    batseat2 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat2")#打席2
+    batseat3 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat3")#打席3
+    batseat4 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat4")#打席4
+    batseat5 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat5")#打席5
+    # batseat6 = models.OneToOneField( BatResult, on_delete=models.CASCADE, null=True, blank=True ,related_name="batseat6")#打席6
+# #
+#
+# # #   打擊結果
+# # #class Plays(models.Model):

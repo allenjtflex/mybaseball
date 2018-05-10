@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Member,Team,Cup, CupGroup,BatResult,Schedule
+from .models import (Member,Team,Cup, CupGroup,BatResult,Schedule, Game,BatterOrder,League)
 # Register your models here.
 
 class TeamAdmin(admin.ModelAdmin):
@@ -8,9 +8,9 @@ class TeamAdmin(admin.ModelAdmin):
     list_per_page = 10
     #search_fields = ['title']
 
+admin.site.register(League)
 admin.site.register(Member)
 admin.site.register(Team,TeamAdmin)
-admin.site.register(Cup)
 
 
 class CupGroupAdmin(admin.ModelAdmin):
@@ -19,7 +19,20 @@ class CupGroupAdmin(admin.ModelAdmin):
     list_per_page = 10
     #search_fields = ['title']
 
-admin.site.register(CupGroup,CupGroupAdmin)
+# admin.site.register(CupGroup,CupGroupAdmin)
+
+
+class CupGroupInline(admin.TabularInline):
+    model = CupGroup
+
+
+
+class CupAdmin(admin.ModelAdmin):
+    inlines = [
+           CupGroupInline,
+       ]
+
+admin.site.register(Cup,CupAdmin)
 
 
 
@@ -31,8 +44,36 @@ class BatResultAdmin(admin.ModelAdmin):
 admin.site.register(BatResult,BatResultAdmin)
 
 
+
+
+
+
+
+class GameInline(admin.TabularInline):
+    model = Game
+
+# class GameAdmin(admin.ModelAdmin):
+#     inlines = [
+#            BatterOrderInline,
+#        ]
+# admin.site.register(Game,GameAdmin)
+#
+class BatterOrderInline(admin.TabularInline):
+    model = BatterOrder
+
+
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ( 'dif_date', 'cup','guest' ,'home','playdate')
     list_display_links = (  'cup','playdate', )
     list_per_page = 10
+    fieldsets = (
+          ('Game info', { 'fields': ['cup', 'playdate','guest', 'home'], }),
+          ('Score info', { 'fields': ['guest_score', 'home_score'], }),
+      )
+    inlines = [
+           # GameInline,
+           BatterOrderInline,
+       ]
+
+
 admin.site.register(Schedule,ScheduleAdmin)
